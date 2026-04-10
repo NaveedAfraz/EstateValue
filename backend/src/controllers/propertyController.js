@@ -220,7 +220,7 @@ exports.predictOnly = async (req, res) => {
         });
         
         console.log(`💰 [ML RESPONSE] Price: ₹${response.data.predicted_price} Lakhs`);
-        res.json({ predicted_price: response.data.predicted_price });
+        res.json(response.data);
     } catch (error) {
         console.error('ML Service Error:', error.message);
         res.status(500).json({ error: 'Failed to generate prediction' });
