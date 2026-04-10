@@ -4,9 +4,6 @@ const API_BASE_URL = 'http://localhost:5000/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
 });
 
 // Interceptor to add JWT token to requests
@@ -32,6 +29,7 @@ export const propertyService = {
     update: (id: number, data: any) => api.put(`/properties/${id}`, data),
     delete: (id: number) => api.delete(`/properties/${id}`),
     predict: (features: any) => api.post('/properties/predict', features),
+    getFeatured: () => api.get('/properties'), // We'll slice in frontend
 };
 
 export const userService = {

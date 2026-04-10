@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, TrendingUp, ShieldCheck, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -6,46 +6,29 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { PropertyCard } from '../components/PropertyCard';
 import type { Property } from '../components/PropertyCard';
-
-const featuredProperties: Property[] = [
-  {
-    id: 1,
-    title: "Modern Villa with Pool",
-    location: "Beverly Hills, CA",
-    bedrooms: 4,
-    bathrooms: 3,
-    square_feet: 2500,
-    actual_price: 1250000,
-    predicted_price: 1200000,
-    is_fair_price: true,
-  },
-  {
-    id: 2,
-    title: "Luxury Penthouse",
-    location: "Manhattan, NY",
-    bedrooms: 3,
-    bathrooms: 2,
-    square_feet: 1800,
-    actual_price: 2500000,
-    predicted_price: 2600000,
-    is_fair_price: true,
-  },
-  {
-    id: 3,
-    title: "Cozy Suburban Home",
-    location: "Austin, TX",
-    bedrooms: 3,
-    bathrooms: 2,
-    square_feet: 2100,
-    actual_price: 550000,
-    predicted_price: 500000,
-    is_fair_price: false,
-  }
-];
+import { propertyService } from '../services/api';
 
 export const Home: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchFeatured();
+  }, []);
+
+  const fetchFeatured = async () => {
+    try {
+      const response = await propertyService.getFeatured();
+      const mappedData = response.data.map((p: any) => ({
+        ...p,
+        is_fair_price: p.status === 'fair'
+      }));
+      setFeaturedProperties(mappedData.slice(0, 3));
+    } catch (err) {
+      console.error('Failed to load featured properties');
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,15 +130,21 @@ export const Home: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProperties.map((property) => (
-              <motion.div
-                key={property.id}
-                whileHover={{ y: -8 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <PropertyCard property={property} />
-              </motion.div>
-            ))}
+            {featuredProperties.length > 0 ? (
+              featuredProperties.map((property) => (
+                <motion.div
+                  key={property.id}
+                  whileHover={{ y: -8 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <PropertyCard property={property} />
+                </motion.div>
+              ))
+            ) : (
+              <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-10 text-slate-500">
+                Loading latest properties...
+              </div>
+            )}
           </div>
         </div>
       </section>

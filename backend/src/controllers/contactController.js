@@ -3,15 +3,15 @@ const pool = require('../config/db');
 // Submit a new contact message (Public)
 exports.createMessage = async (req, res) => {
     try {
-        const { firstName, lastName, email, message } = req.body;
+        const { firstName, lastName, email, phone, message, propertyId } = req.body;
         
         if (!firstName || !lastName || !email || !message) {
             return res.status(400).json({ error: 'All fields are required' });
         }
 
         await pool.query(
-            'INSERT INTO contacts (first_name, last_name, email, message) VALUES (?, ?, ?, ?)',
-            [firstName, lastName, email, message]
+            'INSERT INTO contacts (first_name, last_name, email, phone, message, property_id) VALUES (?, ?, ?, ?, ?, ?)',
+            [firstName, lastName, email, phone, message, propertyId || null]
         );
 
         res.status(201).json({ message: 'Message sent successfully' });
@@ -24,7 +24,12 @@ exports.createMessage = async (req, res) => {
 // Get all messages (Admin Only)
 exports.getAllMessages = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM contacts ORDER BY created_at DESC');
+        const [rows] = await pool.query(`
+            SELECT c.*, p.title as property_title 
+            FROM contacts c 
+            LEFT JOIN properties p ON c.property_id = p.id 
+            ORDER BY c.created_at DESC
+        `);
         res.json(rows);
     } catch (error) {
         console.error('Fetch messages error:', error);

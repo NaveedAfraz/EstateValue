@@ -5,19 +5,39 @@ import {
   Share2, Heart, Calculator, Zap,
   Info,
   ShieldCheck,
-  Loader2
+  Loader2,
+  Building2,
+  Sparkles,
+  X,
+  Phone,
+  User,
+  Mail,
+  Send
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Input } from '../components/Input';
+import { propertyService, userService, contactService } from '../services/api';
+import { toast } from 'react-hot-toast';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
-import { propertyService, userService } from '../services/api';
-import { toast } from 'react-hot-toast';
 
 export const PropertyDetails: React.FC = () => {
   const { id } = useParams();
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Inquiry Modal State
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [inquiryType, setInquiryType] = useState<'contact' | 'tour'>('contact');
+  const [inquiryLoading, setInquiryLoading] = useState(false);
+  const [inquiryForm, setInquiryForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
 
   useEffect(() => {
     if (id) {
@@ -41,6 +61,35 @@ export const PropertyDetails: React.FC = () => {
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast.success('Link copied to clipboard!', { icon: '🔗' });
+  };
+
+  const handleOpenInquiry = (type: 'contact' | 'tour') => {
+    setInquiryType(type);
+    setInquiryForm({
+      ...inquiryForm,
+      message: type === 'tour' 
+        ? `I would like to schedule a tour for ${property.title}.` 
+        : `I am interested in ${property.title}. Please provide more details.`
+    });
+    setIsInquiryModalOpen(true);
+  };
+
+  const handleInquirySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInquiryLoading(true);
+    try {
+      await contactService.send({
+        ...inquiryForm,
+        propertyId: Number(id)
+      });
+      toast.success('Your inquiry has been sent! We will contact you soon.', { duration: 5000 });
+      setIsInquiryModalOpen(false);
+      setInquiryForm({ firstName: '', lastName: '', email: '', phone: '', message: '' });
+    } catch (err) {
+      toast.error('Failed to send inquiry. Please try again later.');
+    } finally {
+      setInquiryLoading(false);
+    }
   };
 
   if (loading) {
@@ -68,7 +117,11 @@ export const PropertyDetails: React.FC = () => {
   }
 
   const isFairPrice = property.status === 'fair';
-  const displayImage = property.image_url || "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&q=80&w=1200";
+  const gallery = property.gallery ? (typeof property.gallery === 'string' ? JSON.parse(property.gallery) : property.gallery) : [];
+  
+  const getFullImageUrl = (url: string) => url.startsWith('/uploads') ? `http://localhost:5000${url}` : url;
+  
+  const displayImage = property.image_url ? getFullImageUrl(property.image_url) : '/placeholder_building.png';
 
   return (
     <div className="min-h-screen bg-white pb-24">
@@ -104,20 +157,42 @@ export const PropertyDetails: React.FC = () => {
         </div>
 
         {/* Gallery Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12 rounded-3xl overflow-hidden h-[500px]">
-          <div className="md:col-span-2 h-full">
-            <img src={displayImage} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700 cursor-pointer" />
-          </div>
-          <div className="hidden md:flex flex-col gap-4 h-full">
-            <img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1200" alt="Interior" className="w-full h-1/2 object-cover hover:scale-105 transition-transform duration-700 cursor-pointer" />
-            <img src="https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&q=80&w=1200" alt="Interior" className="w-full h-1/2 object-cover hover:scale-105 transition-transform duration-700 cursor-pointer" />
-          </div>
-          <div className="hidden md:block relative h-full">
-             <img src="https://images.unsplash.com/photo-1600566753190-17f0bb2a6c3e?auto=format&fit=crop&q=80&w=1200" alt="Kitchen" className="w-full h-full object-cover brightness-50" />
-             <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white font-bold text-xl">
-               +Explore More
+        <div className={`mb-12 rounded-3xl overflow-hidden h-[400px] md:h-[600px] bg-slate-100 border border-slate-100 shadow-inner grid gap-4 ${
+          gallery.length > 1 ? 'grid-cols-1 md:grid-cols-4' : 'grid-cols-1'
+        }`}>
+           <div className={`${gallery.length > 1 ? 'md:col-span-2' : ''} h-full`}>
+             <img src={displayImage} alt={property.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700 cursor-pointer" />
+           </div>
+           
+           {gallery.length > 1 && (
+             <div className="hidden md:flex flex-col gap-4 h-full">
+               {gallery.slice(1, 3).map((imgUrl: string, idx: number) => (
+                 <img key={idx} src={getFullImageUrl(imgUrl)} alt="Interior" className="w-full h-1/2 object-cover hover:scale-105 transition-transform duration-700 cursor-pointer" />
+               ))}
+               {gallery.length === 2 && (
+                 <div className="w-full h-1/2 bg-slate-200 flex items-center justify-center text-slate-400">
+                    <Building2 className="h-8 w-8" />
+                 </div>
+               )}
              </div>
-          </div>
+           )}
+
+           {gallery.length >= 4 && (
+             <div className="hidden md:block relative h-full">
+                <img src={getFullImageUrl(gallery[3])} alt="Exterior" className="w-full h-full object-cover brightness-50" />
+                {gallery.length > 4 && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white font-bold text-xl">
+                    +{gallery.length - 4} More
+                  </div>
+                )}
+             </div>
+           )}
+
+           {gallery.length > 1 && gallery.length < 4 && (
+             <div className="hidden md:block bg-slate-50 flex items-center justify-center">
+                <Sparkles className="h-12 w-12 text-blue-100" />
+             </div>
+           )}
         </div>
 
         {/* Info Grid */}
@@ -208,8 +283,8 @@ export const PropertyDetails: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                <Button fullWidth size="lg" shadow onClick={() => toast.success('Contact info sent to your email!')}>Contact Manager</Button>
-                <Button fullWidth size="lg" variant="secondary" onClick={() => toast('Select a date for your tour', { icon: '📅' })}>Request Tour</Button>
+                <Button fullWidth size="lg" shadow onClick={() => handleOpenInquiry('contact')}>Contact Manager</Button>
+                <Button fullWidth size="lg" variant="secondary" onClick={() => handleOpenInquiry('tour')}>Request Tour</Button>
               </div>
 
               <div className="mt-8 pt-8 border-t border-slate-100 flex items-center justify-center gap-3">
@@ -226,6 +301,86 @@ export const PropertyDetails: React.FC = () => {
           </div>
         </div>
       </div>
+      
+
+      {/* Inquiry Modal */}
+      <AnimatePresence>
+        {isInquiryModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => setIsInquiryModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <form onSubmit={handleInquirySubmit}>
+                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">
+                      {inquiryType === 'tour' ? 'Schedule a Tour' : 'Inquire About Property'}
+                    </h2>
+                    <p className="text-xs text-slate-500 font-medium">We usually respond within 24 hours.</p>
+                  </div>
+                  <button type="button" onClick={() => setIsInquiryModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="p-8 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input 
+                      label="First Name" icon={User} required
+                      value={inquiryForm.firstName}
+                      onChange={(e) => setInquiryForm({...inquiryForm, firstName: e.target.value})}
+                    />
+                    <Input 
+                      label="Last Name" icon={User} required
+                      value={inquiryForm.lastName}
+                      onChange={(e) => setInquiryForm({...inquiryForm, lastName: e.target.value})}
+                    />
+                  </div>
+                  <Input 
+                    label="Email Address" type="email" icon={Mail} required
+                    value={inquiryForm.email}
+                    onChange={(e) => setInquiryForm({...inquiryForm, email: e.target.value})}
+                  />
+                  <Input 
+                    label="Phone Number" icon={Phone} placeholder="+91 98765 43210"
+                    value={inquiryForm.phone}
+                    onChange={(e) => setInquiryForm({...inquiryForm, phone: e.target.value})}
+                  />
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Message</label>
+                    <textarea 
+                      className="w-full rounded-xl border border-slate-200 p-4 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none bg-slate-50/30"
+                      rows={4}
+                      required
+                      value={inquiryForm.message}
+                      onChange={(e) => setInquiryForm({...inquiryForm, message: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
+                  <Button type="submit" fullWidth size="lg" shadow disabled={inquiryLoading}>
+                    {inquiryLoading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : (
+                      <span className="flex items-center justify-center gap-2">
+                        <Send className="h-4 w-4" /> Send Inquiry
+                      </span>
+                    )}
+                  </Button>
+                  <p className="text-[10px] text-center text-slate-400 font-medium uppercase tracking-widest">
+                    By clicking send, you agree to our terms of service.
+                  </p>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

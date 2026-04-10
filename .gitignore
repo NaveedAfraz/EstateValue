@@ -38,3 +38,7 @@ venv/
 .venv
 env/
 .pytest_cache/
+
+# Project specifics
+scratch/
+backend/uploads/

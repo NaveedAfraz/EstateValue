@@ -25,8 +25,9 @@ interface PropertyCardProps {
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const displayPrice = property.actual_price || property.predicted_price || 0;
   
-  // Basic fallback image if none provided
-  const imageUrl = property.image_url || `https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&q=80&w=800`;
+  const imageUrl = property.image_url?.startsWith('/uploads') 
+    ? `http://localhost:5000${property.image_url}` 
+    : (property.image_url || '/placeholder_building.png'); // Using a local relative placeholder or just null
 
   return (
     <Link to={`/property/${property.id}`} className="group block h-full">

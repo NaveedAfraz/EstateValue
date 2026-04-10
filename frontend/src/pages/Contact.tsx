@@ -11,6 +11,7 @@ export const Contact: React.FC = () => {
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     message: ''
   });
   const [loading, setLoading] = useState(false);
@@ -25,6 +26,7 @@ export const Contact: React.FC = () => {
         firstName: '',
         lastName: '',
         email: '',
+        phone: '',
         message: ''
       });
     } catch (err) {
@@ -99,6 +101,13 @@ export const Contact: React.FC = () => {
                   required 
                 />
               </div>
+              <Input 
+                label="Phone Number" 
+                placeholder="+91 98765 43210" 
+                icon={Phone}
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              />
               <Input 
                 label="Email Address" 
                 type="email" 
