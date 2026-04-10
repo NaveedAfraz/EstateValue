@@ -16,6 +16,8 @@ import { Terms } from './pages/Terms';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -72,6 +74,8 @@ function App() {
           <Route path="/terms" element={<Terms />} />
         </Routes>
       </Layout>
+      <Analytics />
+      <SpeedInsights />
     </Router>
   );
 }
