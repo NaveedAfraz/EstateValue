@@ -1,11 +1,32 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Building2, Menu, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Building2, Menu, X, LogOut, User } from 'lucide-react';
 import { Button } from './Button';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    if (token && user) {
+      setIsLoggedIn(true);
+      setUsername(JSON.parse(user).username);
+    } else {
+      setIsLoggedIn(false);
+    }
+  }, [location]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setIsLoggedIn(false);
+    navigate('/login');
+  };
 
   const links = [
     { name: 'Home', path: '/' },
@@ -42,13 +63,30 @@ export const Navbar: React.FC = () => {
                 {link.name}
               </Link>
             ))}
-            <div className="pl-4 ml-4 border-l border-slate-200 flex items-center gap-3">
-              <Link to="/login">
-                <Button variant="ghost">Sign In</Button>
-              </Link>
-              <Link to="/register">
-                <Button>Get Started</Button>
-              </Link>
+            <div className="pl-4 ml-4 border-l border-slate-200 flex items-center gap-4">
+              {isLoggedIn ? (
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 text-slate-600 font-medium text-sm">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                      <User className="h-4 w-4" />
+                    </div>
+                    {username}
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={handleLogout} className="text-slate-500">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Link to="/login">
+                    <Button variant="ghost">Sign In</Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button shadow>Get Started</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -83,12 +121,24 @@ export const Navbar: React.FC = () => {
               </Link>
             ))}
             <div className="pt-4 mt-2 border-t border-slate-100 flex flex-col gap-3">
-              <Link to="/login" onClick={() => setIsOpen(false)}>
-                <Button variant="outline" fullWidth>Sign In</Button>
-              </Link>
-              <Link to="/register" onClick={() => setIsOpen(false)}>
-                <Button fullWidth>Get Started</Button>
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  <div className="px-4 py-2 text-slate-500 text-sm font-medium">Logged in as {username}</div>
+                  <Button variant="outline" fullWidth onClick={() => { handleLogout(); setIsOpen(false); }}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setIsOpen(false)}>
+                    <Button variant="outline" fullWidth>Sign In</Button>
+                  </Link>
+                  <Link to="/register" onClick={() => setIsOpen(false)}>
+                    <Button fullWidth>Get Started</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

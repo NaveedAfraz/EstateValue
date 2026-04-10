@@ -8,6 +8,8 @@ import { Prediction } from './pages/Prediction';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
 
 // Scroll to top on route change
@@ -27,6 +29,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <Toaster position="top-right" reverseOrder={false} />
       {!isAdminPage && <Navbar />}
       <main className="flex-grow">
         {children}
@@ -48,7 +51,11 @@ function App() {
           <Route path="/predict" element={<Prediction />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
         </Routes>
       </Layout>
     </Router>

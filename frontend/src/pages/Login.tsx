@@ -1,11 +1,37 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { authService } from '../services/api';
 
 export const Login: React.FC = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await authService.login(formData);
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to login. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <motion.div 
@@ -19,12 +45,20 @@ export const Login: React.FC = () => {
             <p className="text-slate-500">Sign in to your EstateValue account</p>
           </div>
 
-          <form className="space-y-6">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-2xl">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <Input 
               label="Email Address" 
               type="email" 
               placeholder="name@example.com"
               icon={Mail}
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
               required
             />
             <div className="space-y-1">
@@ -33,6 +67,8 @@ export const Login: React.FC = () => {
                 type="password" 
                 placeholder="••••••••"
                 icon={Lock}
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
                 required
               />
               <div className="flex justify-end">
@@ -40,9 +76,9 @@ export const Login: React.FC = () => {
               </div>
             </div>
 
-            <Button fullWidth size="lg">
+            <Button fullWidth size="lg" disabled={loading}>
               <LogIn className="h-5 w-5 mr-2" />
-              Sign In
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 

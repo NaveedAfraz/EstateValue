@@ -12,7 +12,7 @@ export interface Property {
   square_feet: number;
   actual_price: number | null;
   predicted_price?: number;
-  image?: string;
+  image_url?: string;
   is_fair_price?: boolean;
 }
 
@@ -21,19 +21,13 @@ interface PropertyCardProps {
 }
 
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  });
-
   const displayPrice = property.actual_price || property.predicted_price || 0;
   
-  // Basic mock image if none provided
-  const imageUrl = property.image || `https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&q=80&w=800`;
+  // Basic fallback image if none provided
+  const imageUrl = property.image_url || `https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&q=80&w=800`;
 
   return (
-    <Link to={`/property/${property.id}`} className="group block">
+    <Link to={`/property/${property.id}`} className="group block h-full">
       <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 hover:border-blue-100 flex flex-col h-full relative cursor-pointer top-0 hover:-top-1">
         
         {/* Badges */}
@@ -61,8 +55,8 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
         <div className="p-5 flex flex-col flex-grow">
           <div className="flex justify-between items-start gap-4 mb-2">
              <h3 className="text-lg font-semibold text-slate-900 line-clamp-1">{property.title}</h3>
-             <div className="font-bold text-blue-600 text-lg whitespace-nowrap">
-               {formatter.format(displayPrice)}
+             <div className="font-extrabold text-blue-600 text-lg whitespace-nowrap">
+               ₹{displayPrice}L
              </div>
           </div>
           

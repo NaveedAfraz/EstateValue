@@ -1,47 +1,71 @@
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from dotenv import load_dotenv
-import os
+from ml_model.model import predictor
 
-# Import the model loading & prediction logic
-from ml_model.model import predict_property_price
+app = FastAPI(title="EstateValue ML Service")
 
-load_dotenv()
-
-app = FastAPI(title="EstateValue ML Service", description="Predicts real estate prices based on features")
-
-# Basic CORS setup
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5000").split(",")
-
+# Setup CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 class PropertyFeatures(BaseModel):
+    location: str
+    square_feet: float = Field(..., alias="square_feet")
     bedrooms: int
     bathrooms: int
-    square_feet: int
-    location: str
+    actual_price: Optional[float] = None # In Lakhs
+
+class PredictionResponse(BaseModel):
+    predicted_price: float
+    status: str
+    message: str
 
 @app.get("/")
-def read_root():
-    return {"message": "EstateValue ML Service is running"}
+def home():
+    return {"message": "EstateValue ML Prediction Service is running."}
 
-@app.post("/predict")
+@app.post("/predict", response_model=PredictionResponse)
 def predict(features: PropertyFeatures):
-    try:
-        # In a real app, you would pass the pydantic model to your ML predictor
-        predicted_price = predict_property_price(
-            features.bedrooms, 
-            features.bathrooms, 
-            features.square_feet, 
-            features.location
-        )
-        return {"predicted_price": predicted_price}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    if predictor.model is None:
+        raise HTTPException(status_code=503, detail="Model not loaded. Try again later.")
+
+    # Get prediction
+    predicted_val = predictor.predict(
+        features.location,
+        features.square_feet,
+        features.bathrooms,
+        features.bedrooms
+    )
+
+    if predicted_val is None:
+        raise HTTPException(status_code=500, detail="Prediction failed.")
+
+    # Determine status
+    status = predictor.get_price_status(predicted_val, features.actual_price)
+    
+    # Message formatting
+    msg = f"The estimated value is approx. ₹{predicted_val:.2f} Lakhs."
+    if features.actual_price:
+        if status == "overpriced":
+            msg += " This property seems overpriced compared to market trends."
+        elif status == "underpriced":
+            msg += " This property is a great deal! It's priced below market value."
+        else:
+            msg += " The price is fair compared to similar properties."
+
+    return {
+        "predicted_price": round(predicted_val, 2),
+        "status": status,
+        "message": msg
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

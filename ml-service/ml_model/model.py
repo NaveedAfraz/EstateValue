@@ -1,39 +1,73 @@
 import os
-# import logging
-# import joblib
-# import numpy as np
+import json
+import joblib
+import numpy as np
 
-# This is a placeholder for your actual sklearn model logic.
-# In a real scenario, you'd train a model and save it (e.g., using joblib),
-# then load it here to run `.predict(features)`
+class PricePredictor:
+    def __init__(self):
+        self.model_path = os.path.join(os.path.dirname(__file__), "model.joblib")
+        self.columns_path = os.path.join(os.path.dirname(__file__), "columns.json")
+        self.model = None
+        self.columns = None
+        self.locations = None
+        self.load_model()
 
-def load_model():
-    """
-    Loads your scikit-learn model from disk.
-    Example:
-        model_path = os.getenv('MODEL_PATH', 'trained_model.pkl')
-        return joblib.load(model_path)
-    """
-    pass
+    def load_model(self):
+        try:
+            if os.path.exists(self.model_path) and os.path.exists(self.columns_path):
+                self.model = joblib.load(self.model_path)
+                with open(self.columns_path, "r") as f:
+                    data = json.load(f)
+                    self.columns = data["data_columns"]
+                    # Locations start from index 3 (sqft, bath, bhk are first)
+                    self.locations = self.columns[3:]
+                print("Model and columns loaded successfully.")
+            else:
+                print("Model files not found. Please run training script.")
+        except Exception as e:
+            print(f"Error loading model: {e}")
 
-def predict_property_price(bedrooms: int, bathrooms: int, square_feet: int, location: str) -> float:
-    """
-    Generates a price prediction based on input features.
-    Currently uses a simple dummy logic since there is no pre-trained model.
-    """
-    
-    # Example dummy heuristic calculation
-    base_price = 50000
-    price_per_sqft = 150
-    room_premium = (bedrooms + bathrooms) * 10000
+    def predict(self, location, sqft, bath, bhk):
+        if self.model is None or self.columns is None:
+            return None
 
-    # We could simulate location premium
-    location_multiplier = 1.0
-    if location.lower() == 'downtown':
-        location_multiplier = 1.5
-    elif location.lower() == 'suburb':
-        location_multiplier = 1.1
+        loc_index = -1
+        try:
+            loc_index = self.columns.index(location.lower())
+        except ValueError:
+            loc_index = -1
 
-    predicted_price = (base_price + (square_feet * price_per_sqft) + room_premium) * location_multiplier
-    
-    return round(predicted_price, 2)
+        x = np.zeros(len(self.columns))
+        x[0] = sqft
+        x[1] = bath
+        x[2] = bhk
+        if loc_index >= 3:
+            x[loc_index] = 1
+
+        # Predict returns price in Lakhs
+        prediction = self.model.predict([x])[0]
+        return float(prediction)
+
+    def get_price_status(self, predicted_price, actual_price=None):
+        """
+        Status logic:
+        - If no actual_price provided, defaults to 'fair'
+        - If actual_price > 110% of predicted_price -> overpriced
+        - If actual_price < 90% of predicted_price -> underpriced
+        - Otherwise -> fair
+        """
+        if actual_price is None:
+            return "fair"
+        
+        # Prices are in Lakhs
+        diff = decimal_percent = (actual_price - predicted_price) / predicted_price
+        
+        if decimal_percent > 0.1:
+            return "overpriced"
+        elif decimal_percent < -0.1:
+            return "underpriced"
+        else:
+            return "fair"
+
+# Singleton instance
+predictor = PricePredictor()

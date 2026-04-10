@@ -1,11 +1,38 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, UserPlus, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { authService } from '../services/api';
 
 export const Register: React.FC = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: ''
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      await authService.register(formData);
+      setSuccess(true);
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <motion.div 
@@ -19,12 +46,26 @@ export const Register: React.FC = () => {
             <p className="text-slate-500">Join EstateValue to start exploring properties</p>
           </div>
 
-          <form className="space-y-6">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-2xl">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-600 text-sm rounded-2xl">
+              Registration successful! Redirecting to login...
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <Input 
-              label="Full Name" 
+              label="Username" 
               type="text" 
-              placeholder="John Doe"
+              placeholder="johndoe"
               icon={User}
+              value={formData.username}
+              onChange={(e) => setFormData({...formData, username: e.target.value})}
               required
             />
             <Input 
@@ -32,6 +73,8 @@ export const Register: React.FC = () => {
               type="email" 
               placeholder="name@example.com"
               icon={Mail}
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
               required
             />
             <Input 
@@ -39,6 +82,8 @@ export const Register: React.FC = () => {
               type="password" 
               placeholder="••••••••"
               icon={Lock}
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
               required
             />
 
@@ -47,9 +92,9 @@ export const Register: React.FC = () => {
                <span>I agree to the <a href="#" className="text-blue-600 hover:underline">Terms of Service</a> and <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a></span>
             </div>
 
-            <Button fullWidth size="lg">
+            <Button fullWidth size="lg" disabled={loading || success}>
               <UserPlus className="h-5 w-5 mr-2" />
-              Get Started
+              {loading ? 'Creating account...' : 'Get Started'}
             </Button>
           </form>
 
