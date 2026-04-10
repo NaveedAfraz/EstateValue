@@ -34,4 +34,11 @@ export const propertyService = {
     predict: (features: any) => api.post('/properties/predict', features),
 };
 
+export const userService = {
+    toggleWishlist: (propertyId: number) => api.post('/user/wishlist/toggle', { propertyId }),
+    getWishlist: () => api.get('/user/wishlist'),
+    savePrediction: (data: any) => api.post('/user/predictions', data),
+    getSavedPredictions: () => api.get('/user/predictions'),
+};
+
 export default api;

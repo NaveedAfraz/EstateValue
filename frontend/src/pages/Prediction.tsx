@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Badge } from '../components/Badge';
-import { propertyService } from '../services/api';
+import { propertyService, userService } from '../services/api';
 import { toast } from 'react-hot-toast';
 
 export const Prediction: React.FC = () => {
@@ -224,7 +224,7 @@ export const Prediction: React.FC = () => {
                         variant={result.status === 'fair' ? 'success' : 'warning'}
                         className="py-1 px-3"
                       >
-                        {result.status.charAt(0).toUpperCase() + result.status.slice(1)} Price
+                        {(result?.status || 'fair').charAt(0).toUpperCase() + (result?.status || 'fair').slice(1)} Price
                       </Badge>
                     </div>
                     
@@ -271,7 +271,32 @@ export const Prediction: React.FC = () => {
                            <p className="text-slate-400 text-sm">Save this prediction to your wishlist.</p>
                         </div>
                      </div>
-                     <Button variant="outline" className="border-slate-700 text-white hover:bg-slate-800" fullWidth onClick={() => toast.success('Prediction saved to your profile!')}>
+                     <Button 
+                       variant="outline" 
+                       className="border-slate-700 text-white hover:bg-slate-800" 
+                       fullWidth 
+                       onClick={async () => {
+                         const token = localStorage.getItem('token');
+                         if (!token) {
+                           toast.error('Please sign in to save predictions');
+                           return;
+                         }
+                         
+                         try {
+                           await userService.savePrediction({
+                             location: formData.location,
+                             bedrooms: formData.bedrooms,
+                             bathrooms: formData.bathrooms,
+                             square_feet: formData.square_feet,
+                             predicted_price: result.predicted_price,
+                             status: result.status
+                           });
+                           toast.success('Valuation saved to your history!');
+                         } catch (err) {
+                           toast.error('Failed to save prediction');
+                         }
+                       }}
+                     >
                         Save Prediction
                      </Button>
                   </div>

@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, BedDouble, Bath, Square } from 'lucide-react';
+import { MapPin, BedDouble, Bath, Square, Heart } from 'lucide-react';
 import { Badge } from './Badge';
+import { userService } from '../services/api';
+import { toast } from 'react-hot-toast';
 
 export interface Property {
   id: number;
@@ -40,6 +42,27 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
             )
           )}
         </div>
+
+        {/* Wishlist Button */}
+        <button 
+          onClick={async (e) => {
+            e.preventDefault(); 
+            const token = localStorage.getItem('token');
+            if (!token) {
+              toast.error('Please sign in to save properties');
+              return;
+            }
+            try {
+              const res = await userService.toggleWishlist(property.id);
+              toast.success(res.data.message);
+            } catch (err) {
+              toast.error('Failed to update wishlist');
+            }
+          }}
+          className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-400 hover:text-rose-500 hover:scale-110 transition-all shadow-md"
+        >
+          <Heart className="h-5 w-5 fill-current" />
+        </button>
 
         {/* Image Container */}
         <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">

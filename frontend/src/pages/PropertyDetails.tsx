@@ -10,7 +10,7 @@ import {
 import { motion } from 'framer-motion';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
-import { propertyService } from '../services/api';
+import { propertyService, userService } from '../services/api';
 import { toast } from 'react-hot-toast';
 
 export const PropertyDetails: React.FC = () => {
@@ -81,7 +81,25 @@ export const PropertyDetails: React.FC = () => {
           </Link>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleShare}><Share2 className="h-4 w-4 mr-2" /> Share</Button>
-            <Button variant="outline" size="sm" onClick={() => toast.success('Added to favorites!')}><Heart className="h-4 w-4 mr-2" /> Save</Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={async () => {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                  toast.error('Please sign in to save properties');
+                  return;
+                }
+                try {
+                  const res = await userService.toggleWishlist(Number(id));
+                  toast.success(res.data.message);
+                } catch (err) {
+                  toast.error('Failed to update wishlist');
+                }
+              }}
+            >
+              <Heart className="h-4 w-4 mr-2" /> Save
+            </Button>
           </div>
         </div>
 

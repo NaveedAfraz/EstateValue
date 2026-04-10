@@ -14,6 +14,8 @@ export const Listings: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
+  const [priceRange, setPriceRange] = useState('Any');
+  const [filterBedrooms, setFilterBedrooms] = useState('Any');
 
   useEffect(() => {
     fetchProperties();
@@ -36,10 +38,28 @@ export const Listings: React.FC = () => {
     }
   };
 
-  const filteredProperties = properties.filter(p =>
-    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProperties = properties.filter(p => {
+    const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         p.location.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const price = parseFloat(p.actual_price as any) || 0;
+    let matchesPrice = true;
+    if (priceRange === '0-50') matchesPrice = price <= 50;
+    else if (priceRange === '50-100') matchesPrice = price > 50 && price <= 100;
+    else if (priceRange === '100+') matchesPrice = price > 100;
+
+    let matchesBHK = true;
+    if (filterBedrooms !== 'Any') {
+      const required = parseInt(filterBedrooms);
+      matchesBHK = filterBedrooms.includes('+') ? p.bedrooms >= required : p.bedrooms === required;
+    }
+
+    return matchesSearch && matchesPrice && matchesBHK;
+  }).sort((a, b) => {
+    if (sortBy === 'price-low') return (parseFloat(a.actual_price as any) || 0) - (parseFloat(b.actual_price as any) || 0);
+    if (sortBy === 'price-high') return (parseFloat(b.actual_price as any) || 0) - (parseFloat(a.actual_price as any) || 0);
+    return 0; // Default newest (DB order)
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">
@@ -76,26 +96,36 @@ export const Listings: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <label className="text-sm font-medium text-slate-700 block mb-2">Price Range</label>
-                  <select className="w-full rounded-xl border-slate-200 text-sm focus:border-blue-500 focus:ring-blue-500">
-                    <option>Any Price</option>
-                    <option>$0 - $500k</option>
-                    <option>$500k - $1M</option>
-                    <option>$1M+</option>
+                  <select 
+                    value={priceRange}
+                    onChange={(e) => setPriceRange(e.target.value)}
+                    className="w-full rounded-xl border-slate-200 text-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="Any">Any Price</option>
+                    <option value="0-50">Under ₹50L</option>
+                    <option value="50-100">₹50L - ₹1Cr</option>
+                    <option value="100+">Above ₹1Cr</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-slate-700 block mb-2">Bedrooms</label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {['Any', '1', '2', '3', '4+'].map(num => (
-                      <button key={num} className="flex-grow py-2 rounded-lg border border-slate-200 text-sm hover:border-blue-500 hover:text-blue-600 transition-colors">
+                      <button 
+                        key={num} 
+                        onClick={() => setFilterBedrooms(num)}
+                        className={`px-3 py-2 rounded-lg border text-sm transition-all ${
+                          filterBedrooms === num ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-500'
+                        }`}
+                      >
                         {num}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <Button fullWidth variant="secondary" onClick={fetchProperties}>Reset Filters</Button>
+                <Button fullWidth variant="secondary" onClick={() => { setPriceRange('Any'); setFilterBedrooms('Any'); setSearchTerm(''); }}>Reset Filters</Button>
               </div>
             </div>
           </aside>

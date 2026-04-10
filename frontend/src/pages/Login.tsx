@@ -71,9 +71,6 @@ export const Login: React.FC = () => {
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                 required
               />
-              <div className="flex justify-end">
-                <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700">Forgot password?</a>
-              </div>
             </div>
 
             <Button fullWidth size="lg" disabled={loading}>
