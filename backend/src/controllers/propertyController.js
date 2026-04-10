@@ -100,7 +100,19 @@ exports.updateProperty = async (req, res) => {
             furnishing, facing, age_of_property, is_featured, amenities 
         } = req.body;
 
-        let gallery = req.body.gallery ? (typeof req.body.gallery === 'string' ? JSON.parse(req.body.gallery) : req.body.gallery) : null;
+        let gallery = null;
+        if (req.body.gallery) {
+            if (Array.isArray(req.body.gallery)) {
+                gallery = req.body.gallery;
+            } else if (typeof req.body.gallery === 'string') {
+                try {
+                    gallery = JSON.parse(req.body.gallery);
+                } catch (e) {
+                    // Fallback: If it's a string, wrap it in an array if it looks like a URL
+                    gallery = [req.body.gallery];
+                }
+            }
+        }
         
         if (req.files && req.files.length > 0) {
             const newImages = req.files.map(file => `/uploads/${file.filename}`);

@@ -14,6 +14,7 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { propertyService, contactService } from '../services/api';
 import { toast } from 'react-hot-toast';
+import { formatIndianCurrency } from '../utils/formatters';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -112,8 +113,19 @@ export const AdminDashboard: React.FC = () => {
     setModalLoading(true);
 
     const formData = new FormData();
+    
+    // List of internal/computed fields to EXCLUDE from the update
+    const internalFields = ['id', 'user_id', 'created_at', 'updated_at', 'predicted_price', 'status', 'is_fair_price'];
+    
     Object.keys(editingProperty).forEach(key => {
-      formData.append(key, editingProperty[key]);
+      if (internalFields.includes(key)) return; // Skip internal fields
+      
+      let value = editingProperty[key];
+      // Special handling for gallery array
+      if (key === 'gallery' && Array.isArray(value)) {
+        value = JSON.stringify(value);
+      }
+      formData.append(key, value);
     });
     
     if (editingFiles.length > 0) {
@@ -272,7 +284,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
               <div>
                 <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Avg Listing Price</div>
-                <div className="text-2xl font-black text-slate-900">₹{stats.avgPrice}L</div>
+                 <div className="text-2xl font-black text-slate-900">{formatIndianCurrency(Number(stats.avgPrice))}</div>
               </div>
             </div>
 
@@ -336,7 +348,7 @@ export const AdminDashboard: React.FC = () => {
                                </td>
                                <td className="px-6 py-5 text-sm text-slate-500">{p.location}</td>
                                <td className="px-6 py-5">
-                                  <div className="font-medium text-slate-900">₹{p.actual_price}L</div>
+                                  <div className="font-medium text-slate-900">{formatIndianCurrency(p.actual_price)}</div>
                                   <div className={`text-[10px] font-bold uppercase ${
                                     p.status === 'underpriced' ? 'text-emerald-500' : 
                                     p.status === 'overpriced' ? 'text-rose-500' : 'text-blue-500'
@@ -344,7 +356,7 @@ export const AdminDashboard: React.FC = () => {
                                     {p.status}
                                   </div>
                                </td>
-                               <td className="px-6 py-5 font-bold text-blue-600">₹{p.predicted_price}L</td>
+                               <td className="px-6 py-5 font-bold text-blue-600">{formatIndianCurrency(p.predicted_price)}</td>
                                <td className="px-6 py-5 text-right">
                                   <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                      <button onClick={() => handleOpenModal(p)} className="p-2 hover:bg-white hover:shadow-md rounded-lg text-slate-400 hover:text-blue-600 transition-all">

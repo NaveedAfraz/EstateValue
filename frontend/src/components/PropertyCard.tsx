@@ -4,6 +4,7 @@ import { MapPin, BedDouble, Bath, Square, Heart } from 'lucide-react';
 import { Badge } from './Badge';
 import { userService } from '../services/api';
 import { toast } from 'react-hot-toast';
+import { formatIndianCurrency } from '../utils/formatters';
 
 export interface Property {
   id: number;
@@ -15,7 +16,7 @@ export interface Property {
   actual_price: number | null;
   predicted_price?: number;
   image_url?: string;
-  is_fair_price?: boolean;
+  status?: 'fair' | 'overpriced' | 'underpriced';
 }
 
 interface PropertyCardProps {
@@ -29,19 +30,28 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     ? `${import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:5000'}${property.image_url}` 
     : (property.image_url || '/placeholder_building.png'); 
 
+  const renderBadge = () => {
+    if (!property.predicted_price || !property.actual_price || !property.status) return null;
+    
+    switch (property.status) {
+      case 'fair':
+        return <Badge variant="success" className="shadow-sm backdrop-blur-md bg-emerald-100/90 text-emerald-900 border border-emerald-200">Fair Price</Badge>;
+      case 'overpriced':
+        return <Badge variant="warning" className="shadow-sm backdrop-blur-md bg-orange-100/90 text-orange-900 border border-orange-200">Overpriced</Badge>;
+      case 'underpriced':
+        return <Badge variant="info" className="shadow-sm backdrop-blur-md bg-blue-100/90 text-blue-900 border border-blue-200">Underpriced</Badge>;
+      default:
+        return null;
+    }
+  };
+
   return (
     <Link to={`/property/${property.id}`} className="group block h-full">
       <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 hover:border-blue-100 flex flex-col h-full relative cursor-pointer top-0 hover:-top-1">
         
         {/* Badges */}
         <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-          {property.predicted_price && property.actual_price && (
-            property.is_fair_price ? (
-               <Badge variant="success" className="shadow-sm backdrop-blur-md bg-emerald-100/90 text-emerald-900 border border-emerald-200">Fair Price</Badge>
-            ) : (
-               <Badge variant="warning" className="shadow-sm backdrop-blur-md bg-orange-100/90 text-orange-900 border border-orange-200">Overpriced</Badge>
-            )
-          )}
+          {renderBadge()}
         </div>
 
         {/* Wishlist Button */}
@@ -79,8 +89,8 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
         <div className="p-5 flex flex-col flex-grow">
           <div className="flex justify-between items-start gap-4 mb-2">
              <h3 className="text-lg font-semibold text-slate-900 line-clamp-1">{property.title}</h3>
-             <div className="font-extrabold text-blue-600 text-lg whitespace-nowrap">
-               ₹{displayPrice}L
+             <div className="font-extrabold text-blue-600 text-lg whitespace-nowrap tracking-tight">
+               {formatIndianCurrency(displayPrice)}
              </div>
           </div>
           

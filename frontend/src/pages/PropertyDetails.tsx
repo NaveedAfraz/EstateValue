@@ -20,6 +20,7 @@ import { propertyService, userService, contactService } from '../services/api';
 import { toast } from 'react-hot-toast';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
+import { formatIndianCurrency } from '../utils/formatters';
 
 export const PropertyDetails: React.FC = () => {
   const { id } = useParams();
@@ -116,7 +117,10 @@ export const PropertyDetails: React.FC = () => {
     );
   }
 
-  const isFairPrice = property.status === 'fair';
+  const status = property.status || 'fair';
+  const isFairPrice = status === 'fair';
+  const isOverpriced = status === 'overpriced';
+  const isUnderpriced = status === 'underpriced';
   const gallery = property.gallery ? (typeof property.gallery === 'string' ? JSON.parse(property.gallery) : property.gallery) : [];
   
   const getFullImageUrl = (url: string) => url.startsWith('/uploads') ? `${import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:5000'}${url}` : url;
@@ -204,6 +208,8 @@ export const PropertyDetails: React.FC = () => {
                 <Badge variant="info" className="px-3 py-1">Featured</Badge>
                 <Badge variant="success" className="px-3 py-1">For Sale</Badge>
                 {isFairPrice && <Badge variant="success" className="px-3 py-1">AI Verified: Fair Price</Badge>}
+                {isOverpriced && <Badge variant="warning" className="px-3 py-1">AI Verified: Overpriced</Badge>}
+                {isUnderpriced && <Badge variant="info" className="px-3 py-1">AI Verified: Underpriced</Badge>}
               </div>
               <h1 className="text-4xl font-extrabold text-slate-900 mb-4">{property.title}</h1>
               <div className="flex items-center text-slate-500 text-lg">
@@ -259,8 +265,8 @@ export const PropertyDetails: React.FC = () => {
             >
               <div className="mb-8">
                 <span className="text-slate-500 text-sm block mb-1">Listed Price</span>
-                <div className="text-4xl font-black text-slate-900">
-                  ₹{property.actual_price} Lakhs
+                <div className="text-4xl font-black text-slate-900 tracking-tight">
+                  {formatIndianCurrency(property.actual_price)}
                 </div>
               </div>
 
@@ -273,12 +279,17 @@ export const PropertyDetails: React.FC = () => {
                   </div>
                   <Badge variant="info">Verified</Badge>
                 </div>
-                <div className="text-2xl font-bold text-blue-600 mb-2">
-                  ₹{property.predicted_price} Lakhs
+                <div className="text-2xl font-bold text-blue-600 mb-2 tracking-tight">
+                  {formatIndianCurrency(property.predicted_price)}
                 </div>
                 <div className="flex items-start gap-2 text-sm text-blue-500/80">
                   <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>Based on market trends in {property.location}. Our model suggests this represents a {isFairPrice ? 'fair market value' : 'potential premium'}.</span>
+                  <span>
+                    Based on market trends in {property.location}. 
+                    {isFairPrice && " Our model suggests this represents a fair market value."}
+                    {isOverpriced && " Our model suggests this property is priced above the current market trend."}
+                    {isUnderpriced && " Great deal! Our model suggests this property is priced below market value."}
+                  </span>
                 </div>
               </div>
 
