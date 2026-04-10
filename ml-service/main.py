@@ -12,12 +12,12 @@ load_dotenv()
 app = FastAPI(title="EstateValue ML Service")
 
 # Setup CORS
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5000,https://estatevalue-1.onrender.com,https://estate-value.vercel.app").split(",")
-
+# ML service is only called server-to-server from the Node.js backend.
+# CORS restrictions here are not meaningful for security, so we allow all origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,  # Must be False when allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
 )
