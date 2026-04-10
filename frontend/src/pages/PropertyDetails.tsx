@@ -119,7 +119,7 @@ export const PropertyDetails: React.FC = () => {
   const isFairPrice = property.status === 'fair';
   const gallery = property.gallery ? (typeof property.gallery === 'string' ? JSON.parse(property.gallery) : property.gallery) : [];
   
-  const getFullImageUrl = (url: string) => url.startsWith('/uploads') ? `http://localhost:5000${url}` : url;
+  const getFullImageUrl = (url: string) => url.startsWith('/uploads') ? `${import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:5000'}${url}` : url;
   
   const displayImage = property.image_url ? getFullImageUrl(property.image_url) : '/placeholder_building.png';
 

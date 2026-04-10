@@ -652,7 +652,7 @@ export const AdminDashboard: React.FC = () => {
                         ) : editingProperty.gallery ? (
                            (Array.isArray(editingProperty.gallery) ? editingProperty.gallery : JSON.parse(editingProperty.gallery)).map((url: string, idx: number) => (
                              <div key={idx} className="aspect-square bg-white rounded-xl border border-slate-200 overflow-hidden">
-                               <img src={url.startsWith('/uploads') ? `http://localhost:5000${url}` : url} alt="Gallery" className="w-full h-full object-cover" />
+                               <img src={url.startsWith('/uploads') ? `${import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:5000'}${url}` : url} alt="Gallery" className="w-full h-full object-cover" />
                              </div>
                            ))
                         ) : (

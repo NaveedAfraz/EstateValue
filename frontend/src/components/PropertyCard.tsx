@@ -26,8 +26,8 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const displayPrice = property.actual_price || property.predicted_price || 0;
   
   const imageUrl = property.image_url?.startsWith('/uploads') 
-    ? `http://localhost:5000${property.image_url}` 
-    : (property.image_url || '/placeholder_building.png'); // Using a local relative placeholder or just null
+    ? `${import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:5000'}${property.image_url}` 
+    : (property.image_url || '/placeholder_building.png'); 
 
   return (
     <Link to={`/property/${property.id}`} className="group block h-full">
