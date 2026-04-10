@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Calculator, Sparkles, MapPin, 
+  Calculator, Sparkles, 
   BedDouble, Bath, Square, RefreshCcw, 
   TrendingUp, AlertCircle,
   CheckCircle2, XCircle

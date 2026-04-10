@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const axios = require('axios');
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'process.env.ML_SERVICE_URL';
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 
 // Get all properties
 exports.getAllProperties = async (req, res) => {
