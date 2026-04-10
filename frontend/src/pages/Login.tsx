@@ -22,9 +22,15 @@ export const Login: React.FC = () => {
 
     try {
       const response = await authService.login(formData);
+      const user = response.data.user;
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      navigate('/');
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      if (user.role === 'admin' || user.is_admin) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to login. Please check your credentials.');
     } finally {
