@@ -54,19 +54,22 @@ export const Prediction: React.FC = () => {
     setError('');
     setResult(null);
     
+    const toastId = toast.loading('AI is analyzing market data...');
+    
     try {
-      const predictionPromise = propertyService.predict(formData);
+      const response = await propertyService.predict(formData);
+      const data = response.data;
       
-      toast.promise(predictionPromise, {
-        loading: 'AI is analyzing market data...',
-        success: 'Prediction generated!',
-        error: (err) => err.response?.data?.error || 'ML Service is currently offline.'
-      });
+      if (data.location_found) {
+        toast.success('Prediction generated!', { id: toastId });
+      } else {
+        toast.error('Location not found in database', { id: toastId, icon: '⚠️' });
+      }
 
-      const response = await predictionPromise;
-      setResult(response.data);
+      setResult(data);
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Failed to generate prediction. Please try again later.';
+      toast.error(msg, { id: toastId });
       setError(msg);
     } finally {
       setLoading(false);

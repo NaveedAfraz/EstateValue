@@ -211,18 +211,36 @@ exports.predictOnly = async (req, res) => {
         console.log(`\n🔍 [PREDICTION REQUEST]`);
         console.log(`📍 Location: ${location}`);
         console.log(`🏠 Specs: ${bedrooms}BHK, ${bathrooms}BA, ${square_feet} sqft`);
+        console.log(`🌐 Calling ML Service at: ${ML_SERVICE_URL}`);
 
         const response = await axios.post(`${ML_SERVICE_URL}/predict`, {
             bedrooms,
             bathrooms,
             square_feet,
             location
+        }, {
+            timeout: 10000 // 10 second timeout — prevents hanging requests
         });
         
         console.log(`💰 [ML RESPONSE] Price: ₹${response.data.predicted_price} Lakhs`);
         res.json(response.data);
     } catch (error) {
-        console.error('ML Service Error:', error.message);
-        res.status(500).json({ error: 'Failed to generate prediction' });
+        // Log specific details to help debug intermittent failures
+        const isTimeout = error.code === 'ECONNABORTED';
+        const isConnRefused = error.code === 'ECONNREFUSED';
+        console.error(`❌ ML Service Error [${error.code || 'UNKNOWN'}]: ${error.message}`);
+        
+        if (isTimeout) {
+            console.error('👉 The ML service took too long to respond. Check if ML_SERVICE_URL is correct on Render.');
+        }
+        if (isConnRefused) {
+            console.error('👉 Connection refused! ML_SERVICE_URL is likely set to localhost. Check Render env vars.');
+            console.error(`   Current ML_SERVICE_URL = "${ML_SERVICE_URL}"`);
+        }
+
+        res.status(500).json({ 
+            error: 'Failed to generate prediction',
+            detail: isTimeout ? 'ML service timeout' : isConnRefused ? 'ML service unreachable (check ML_SERVICE_URL env var)' : error.message
+        });
     }
 };
