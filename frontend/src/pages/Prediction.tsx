@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Badge } from '../components/Badge';
+import { LocationAutocomplete } from '../components/LocationAutocomplete';
 import { propertyService, userService } from '../services/api';
 import { toast } from 'react-hot-toast';
 
@@ -19,6 +20,7 @@ export const Prediction: React.FC = () => {
     predicted_price: number;
     status: string;
     message: string;
+    location_found: boolean;
   } | null>(null);
 
   const [formData, setFormData] = useState({
@@ -130,13 +132,9 @@ export const Prediction: React.FC = () => {
                 required
               />
 
-              <Input 
-                label="Location (Area)" 
-                type="text" 
-                icon={MapPin}
-                placeholder="e.g. Indira Nagar"
+              <LocationAutocomplete 
                 value={formData.location}
-                onChange={(e) => setFormData({...formData, location: e.target.value})}
+                onChange={(val) => setFormData({...formData, location: val})}
                 required
               />
 
@@ -206,7 +204,24 @@ export const Prediction: React.FC = () => {
                 </motion.div>
               )}
 
-              {result && !loading && (
+               {result && !loading && !result.location_found && (
+                 <motion.div 
+                   initial={{ opacity: 0, y: 10 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   className="bg-orange-50 border border-orange-100 p-10 rounded-3xl text-center shadow-lg"
+                 >
+                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                       <AlertCircle className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">Location Not Found</h3>
+                    <p className="text-slate-600 leading-relaxed">
+                      We couldn't find market data for <strong>"{formData.location}"</strong> in our database. 
+                      Please try selecting a location from the suggestions to get an accurate prediction.
+                    </p>
+                 </motion.div>
+               )}
+
+               {result && !loading && result.location_found && (
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -228,16 +243,18 @@ export const Prediction: React.FC = () => {
                       </Badge>
                     </div>
                     
-                    <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-start gap-3 mb-8">
-                      {result.status === 'fair' ? (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
-                      )}
-                      <p className="text-sm text-slate-700 leading-relaxed font-medium">
-                        {result.message}
-                      </p>
-                    </div>
+                    {result.message && (
+                      <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-start gap-3 mb-8">
+                        {result.status === 'fair' ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
+                        )}
+                        <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                          {result.message}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="space-y-4 pt-6 border-t border-slate-100">
                        <h4 className="text-sm font-bold text-slate-900 text-center">Market Confidence</h4>

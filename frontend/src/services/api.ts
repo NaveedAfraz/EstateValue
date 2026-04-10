@@ -41,4 +41,10 @@ export const userService = {
     getSavedPredictions: () => api.get('/user/predictions'),
 };
 
+export const contactService = {
+    send: (data: any) => api.post('/contacts', data),
+    getAll: () => api.get('/contacts'),
+    delete: (id: number) => api.delete(`/contacts/${id}`),
+};
+
 export default api;

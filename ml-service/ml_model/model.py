@@ -34,7 +34,9 @@ class PricePredictor:
         loc_index = -1
         try:
             loc_index = self.columns.index(location.lower())
+            print(f"✅ Location match found: '{location}' at index {loc_index}")
         except ValueError:
+            print(f"⚠️ Location '{location}' NOT found in model. Falling back to default.")
             loc_index = -1
 
         x = np.zeros(len(self.columns))
@@ -46,7 +48,7 @@ class PricePredictor:
 
         # Predict returns price in Lakhs
         prediction = self.model.predict([x])[0]
-        return float(prediction)
+        return float(prediction), (loc_index >= 3)
 
     def get_price_status(self, predicted_price, actual_price=None):
         """

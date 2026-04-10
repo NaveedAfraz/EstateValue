@@ -1,14 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Loader2 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { toast } from 'react-hot-toast';
+import { contactService } from '../services/api';
 
 export const Contact: React.FC = () => {
-  const handleSubmit = (e: React.FormEvent) => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    message: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Message sent! We\'ll get back to you soon.');
+    setLoading(true);
+    try {
+      await contactService.send(formData);
+      toast.success('Message sent! We\'ll get back to you soon.');
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        message: ''
+      });
+    } catch (err) {
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -61,22 +84,44 @@ export const Contact: React.FC = () => {
           >
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
-                <Input label="First Name" placeholder="John" required />
-                <Input label="Last Name" placeholder="Doe" required />
+                <Input 
+                  label="First Name" 
+                  placeholder="John" 
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                  required 
+                />
+                <Input 
+                  label="Last Name" 
+                  placeholder="Doe" 
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                  required 
+                />
               </div>
-              <Input label="Email Address" type="email" icon={Mail} placeholder="john@example.com" required />
+              <Input 
+                label="Email Address" 
+                type="email" 
+                icon={Mail} 
+                placeholder="john@example.com" 
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                required 
+              />
               <div>
                 <label className="text-sm font-bold text-slate-700 block mb-2 uppercase tracking-wide">Your Message</label>
                 <textarea 
                   className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 p-4 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                   rows={4}
                   placeholder="How can we help you?"
+                  value={formData.message}
+                  onChange={(e) => setFormData({...formData, message: e.target.value})}
                   required
                 />
               </div>
-              <Button fullWidth size="lg">
-                <Send className="h-5 w-5 mr-2" />
-                Send Message
+              <Button fullWidth size="lg" disabled={loading}>
+                {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Send className="h-5 w-5 mr-2" />}
+                {loading ? 'Sending...' : 'Send Message'}
               </Button>
             </form>
           </motion.div>

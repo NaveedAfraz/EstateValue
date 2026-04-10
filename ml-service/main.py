@@ -26,6 +26,7 @@ class PredictionResponse(BaseModel):
     predicted_price: float
     status: str
     message: str
+    location_found: bool
 
 @app.get("/")
 def home():
@@ -33,11 +34,14 @@ def home():
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict(features: PropertyFeatures):
+    print(f"\n🧠 [ML REQUEST RECEIVED]")
+    print(f"Features: {features.dict()}")
+    
     if predictor.model is None:
         raise HTTPException(status_code=503, detail="Model not loaded. Try again later.")
 
     # Get prediction
-    predicted_val = predictor.predict(
+    predicted_val, location_found = predictor.predict(
         features.location,
         features.square_feet,
         features.bathrooms,
@@ -52,7 +56,9 @@ def predict(features: PropertyFeatures):
     
     # Message formatting
     msg = f"The estimated value is approx. ₹{predicted_val:.2f} Lakhs."
-    if features.actual_price:
+    if not location_found:
+        msg = f"Location '{features.location}' not found in our Bengaluru database."
+    elif features.actual_price:
         if status == "overpriced":
             msg += " This property seems overpriced compared to market trends."
         elif status == "underpriced":
@@ -63,7 +69,8 @@ def predict(features: PropertyFeatures):
     return {
         "predicted_price": round(predicted_val, 2),
         "status": status,
-        "message": msg
+        "message": msg,
+        "location_found": location_found
     }
 
 if __name__ == "__main__":

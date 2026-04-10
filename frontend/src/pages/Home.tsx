@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, TrendingUp, ShieldCheck, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '../components/Button';
@@ -43,44 +44,64 @@ const featuredProperties: Property[] = [
 ];
 
 export const Home: React.FC = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/listings?q=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate('/listings');
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-32 overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-mesh opacity-50" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="relative pt-32 pb-40 overflow-hidden flex items-center min-h-[600px]">
+        {/* Background Image with Overlay */}
+        <div 
+          className="absolute inset-0 -z-20 bg-cover bg-center"
+          style={{ backgroundImage: 'url("/hero_premium.png")' }}
+        />
+        <div className="absolute inset-0 -z-10 bg-slate-900/60" /> {/* Dark overlay for readability */}
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center w-full">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-6">
+            <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6 drop-shadow-lg">
               Find Your Dream Home <br />
-              <span className="text-blue-600">at the Right Price</span>
+              <span className="text-blue-400">at the Right Price</span>
             </h1>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto mb-10">
-              The only real estate platform that uses AI to predict property values and tell you if you're getting a fair deal.
+            <p className="text-xl text-slate-200 max-w-2xl mx-auto mb-12 drop-shadow-md">
+              The only premium real estate platform that utilizes advanced AI to predict true property values.
             </p>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
             className="max-w-4xl mx-auto"
           >
-            <div className="bg-white p-2 rounded-2xl shadow-2xl shadow-blue-500/10 border border-slate-100 flex flex-col md:flex-row gap-2">
+            <form onSubmit={handleSearch} className="bg-white/10 backdrop-blur-md p-3 rounded-3xl shadow-2xl border border-white/20 flex flex-col md:flex-row gap-3 relative z-10 group transition-all duration-300 hover:bg-white/20">
               <div className="flex-grow">
                 <Input 
-                  placeholder="Search by location, city, or zip..." 
+                  placeholder="Search by location (e.g. Whitefield, Indiranagar)..." 
                   icon={Search}
-                  className="border-none focus:ring-0 shadow-none text-lg py-4"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="border-none focus:ring-0 shadow-none text-lg py-5 bg-white/90 text-slate-900 placeholder:text-slate-500 rounded-2xl"
                 />
               </div>
-              <Button size="lg" className="md:w-48 text-lg font-semibold">
+              <Button size="lg" type="submit" className="md:w-56 text-lg font-bold rounded-2xl shadow-lg">
                 Search Properties
               </Button>
-            </div>
+            </form>
           </motion.div>
         </div>
       </section>

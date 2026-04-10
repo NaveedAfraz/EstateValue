@@ -5,12 +5,12 @@ import {
   Search, LayoutDashboard, Database, 
   BarChart3, Loader2, X,
   MapPin, BedDouble, Bath, Square, Image as ImageIcon,
-  Type, Inbox, TrendingUp, LogOut
+  Type, Inbox, TrendingUp, LogOut, Mail
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { propertyService } from '../services/api';
+import { propertyService, contactService } from '../services/api';
 import { toast } from 'react-hot-toast';
 
 export const AdminDashboard: React.FC = () => {
@@ -21,11 +21,26 @@ export const AdminDashboard: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<any>(null);
   const [modalLoading, setModalLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'listings' | 'analytics'>('listings');
+  const [activeTab, setActiveTab] = useState<'listings' | 'analytics' | 'messages'>('listings');
+  const [messages, setMessages] = useState<any[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
 
   useEffect(() => {
     fetchProperties();
+    fetchMessages();
   }, []);
+
+  const fetchMessages = async () => {
+    setMessagesLoading(true);
+    try {
+      const response = await contactService.getAll();
+      setMessages(response.data);
+    } catch (err) {
+      console.error('Failed to fetch messages');
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
 
   const fetchProperties = async () => {
     setLoading(true);
@@ -109,6 +124,18 @@ export const AdminDashboard: React.FC = () => {
     navigate('/login');
   };
 
+  const handleDeleteMessage = async (id: number) => {
+    if (window.confirm('Delete this inquiry?')) {
+      try {
+        await contactService.delete(id);
+        toast.success('Message deleted');
+        fetchMessages();
+      } catch (err) {
+        toast.error('Failed to delete message');
+      }
+    }
+  };
+
   const filteredProperties = properties.filter(p => 
     p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.location.toLowerCase().includes(searchTerm.toLowerCase())
@@ -150,6 +177,20 @@ export const AdminDashboard: React.FC = () => {
               <BarChart3 className="h-5 w-5" />
               Analytics
            </button>
+           <button 
+              onClick={() => setActiveTab('messages')}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-left transition-all ${
+                activeTab === 'messages' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+               <Mail className="h-5 w-5" />
+               Inquiries
+               {messages.length > 0 && (
+                 <span className="ml-auto bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                   {messages.length}
+                 </span>
+               )}
+            </button>
         </nav>
 
         <div className="mt-auto pt-6 border-t border-slate-800">
@@ -284,6 +325,57 @@ export const AdminDashboard: React.FC = () => {
               </div>
             )}
           </>
+        ) : activeTab === 'messages' ? (
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+             {messagesLoading ? (
+               <div className="py-20 text-center flex flex-col items-center">
+                 <Loader2 className="h-8 w-8 text-blue-600 animate-spin mb-4" />
+                 <p className="text-slate-500">Checking for new inquiries...</p>
+               </div>
+             ) : messages.length === 0 ? (
+               <div className="p-20 text-center flex flex-col items-center gap-4">
+                  <Inbox className="h-12 w-12 text-slate-200" />
+                  <p className="text-slate-500 italic">No inquiries found in your inbox.</p>
+               </div>
+             ) : (
+               <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                     <thead>
+                        <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                           <th className="px-6 py-4">Sender</th>
+                           <th className="px-6 py-4">Message</th>
+                           <th className="px-6 py-4">Date</th>
+                           <th className="px-6 py-4 text-right">Action</th>
+                        </tr>
+                     </thead>
+                     <tbody className="divide-y divide-slate-50">
+                        {messages.map((m) => (
+                           <tr key={m.id} className="hover:bg-slate-50/50 transition-colors group">
+                              <td className="px-6 py-5">
+                                 <div className="font-bold text-slate-900">{m.first_name} {m.last_name}</div>
+                                 <div className="text-xs text-slate-500">{m.email}</div>
+                              </td>
+                              <td className="px-6 py-5">
+                                 <p className="text-sm text-slate-600 line-clamp-2 max-w-md">{m.message}</p>
+                              </td>
+                              <td className="px-6 py-5 text-sm text-slate-400 whitespace-nowrap">
+                                 {new Date(m.created_at).toLocaleDateString()}
+                              </td>
+                              <td className="px-6 py-5 text-right">
+                                 <button 
+                                   onClick={() => handleDeleteMessage(m.id)}
+                                   className="p-2 hover:bg-rose-50 text-slate-300 hover:text-rose-600 rounded-lg transition-all"
+                                 >
+                                    <Trash2 className="h-4 w-4" />
+                                 </button>
+                              </td>
+                           </tr>
+                        ))}
+                     </tbody>
+                  </table>
+               </div>
+             )}
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">

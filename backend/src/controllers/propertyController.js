@@ -125,12 +125,18 @@ exports.deleteProperty = async (req, res) => {
 exports.predictOnly = async (req, res) => {
     try {
         const { bedrooms, bathrooms, square_feet, location } = req.body;
+        console.log(`\n🔍 [PREDICTION REQUEST]`);
+        console.log(`📍 Location: ${location}`);
+        console.log(`🏠 Specs: ${bedrooms}BHK, ${bathrooms}BA, ${square_feet} sqft`);
+
         const response = await axios.post(`${ML_SERVICE_URL}/predict`, {
             bedrooms,
             bathrooms,
             square_feet,
             location
         });
+        
+        console.log(`💰 [ML RESPONSE] Price: ₹${response.data.predicted_price} Lakhs`);
         res.json({ predicted_price: response.data.predicted_price });
     } catch (error) {
         console.error('ML Service Error:', error.message);
